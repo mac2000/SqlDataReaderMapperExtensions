@@ -47,18 +47,22 @@ namespace Tests
                 }
             };
 
-        [TestInitialize]
-        public void TestInitialize()
+        [AssemblyInitialize]
+        public static void AssemblyInitialize(TestContext context)
         {
+            if (IsAppVeyor) return;
+
             var server = new Server(new ServerConnection(GetSqlConnection("master")));
             server.ConnectionContext.ExecuteNonQuery(File.ReadAllText("Setup.sql"));
         }
 
-        protected SqlConnection GetSqlConnection(string database = "SqlDataReaderMapperExtensionTests")
+        protected static bool IsAppVeyor => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APPVEYOR"));
+
+        protected static SqlConnection GetSqlConnection(string database = "SqlDataReaderMapperExtensionTests")
         {
-            var connectionString = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APPVEYOR"))
-                ? $"Server=(localdb)\\MSSQLLocalDB;Database={database};Integrated Security=true"
-                : $"Server=(local)\\SQL2014;Database={database};User ID=sa;Password=Password12!";
+            var connectionString = IsAppVeyor
+                ? $"Server=(local)\\SQL2014;Database={database};User ID=sa;Password=Password12!"
+                : $"Server=(localdb)\\MSSQLLocalDB;Database={database};Integrated Security=true";
 
             return new SqlConnection(connectionString);
         }
